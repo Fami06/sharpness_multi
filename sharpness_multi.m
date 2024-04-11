@@ -4,7 +4,7 @@ clear;
 [filename, filepath] = uigetfile('*.xlsx;*.xls');
 
 % シート名を指定
-sheet_name = 'Sheet2';
+sheet_name = 'Sheet6';
 
 % 横軸のデータを取得（固定）
 x_data = readmatrix(filename, 'Sheet', sheet_name, 'Range', 'C3:C30');
@@ -12,7 +12,10 @@ x_data = readmatrix(filename, 'Sheet', sheet_name, 'Range', 'C3:C30');
 % セルD3〜M30までの列の数を指定
 num_columns = 10;
 
-figure; % 新しい図を開始
+% 列ごとのシャープネスの値を格納するための配列を事前に割り当て
+sharpness_values = zeros(1, num_columns); 
+
+figure;
 
 for col = 1:num_columns
     % y軸のデータを取得
@@ -26,7 +29,7 @@ for col = 1:num_columns
     normalized_y_data = (y_data - min_y) / (max_y - min_y);
 
     % データのフィッティング
-    fit_result = fit(x_data, normalized_y_data, 'fourier8'); % 線形フィットを使用
+    fit_result = fit(x_data, normalized_y_data, 'fourier8');
 
     %----------
     a0 = fit_result.a0;
@@ -54,7 +57,7 @@ for col = 1:num_columns
                a4*cos(4*x*w) + b4*sin(4*x*w) + a5*cos(5*x*w) + b5*sin(5*x*w) + ...
                a6*cos(6*x*w) + b6*sin(6*x*w) + a7*cos(7*x*w) + b7*sin(7*x*w) + ...
                a8*cos(8*x*w) + b8*sin(8*x*w);
-    sol1 = vpasolve(g == 0.2, x, 1);
+    sol1 = vpasolve(g == 0.2, x, 1.5);
     sol2 = vpasolve(g == 0.2, x, 6);
     sol3 = vpasolve(g == 0.8, x, 1.5);
     sol4 = vpasolve(g == 0.8, x, 6);
@@ -70,16 +73,16 @@ for col = 1:num_columns
     
     % 赤いグリッド線を引く
     hold on;
-    plot(xlim, [0.2, 0.2], 'r-'); % y軸の値が0.2の位置に赤い線を引く
-    plot(xlim, [0.8, 0.8], 'r-'); % y軸の値が0.8の位置に赤い線を引く
+    plot(xlim, [0.2, 0.2], 'r-'); 
+    plot(xlim, [0.8, 0.8], 'r-'); 
 
-    % sol1 と sol2 をプロット
+    % sol1〜sol4 をプロット
     plot(double(sol1), g(sol1), 'ro');
     plot(double(sol2), g(sol2), 'ro');
     plot(double(sol3), g(sol3), 'ro');
     plot(double(sol4), g(sol4), 'ro');
 
-    % sol1 と sol2 から x 軸に垂直な線を引く
+    % 各点からx 軸に垂直な線を引く
     line([double(sol1), double(sol1)], [0, g(sol1)], 'Color', 'b', 'LineStyle', '--'); 
     line([double(sol2), double(sol2)], [0, g(sol2)], 'Color', 'b', 'LineStyle', '--');
     line([double(sol3), double(sol3)], [0, g(sol3)], 'Color', 'b', 'LineStyle', '--');
@@ -88,5 +91,8 @@ for col = 1:num_columns
     hold off;
 
     sharpness= 2/ ((sol3 - sol1) + (sol2 - sol4));
+    sharpness_values(col) = double(sharpness);
     title(strcat((sprintf('列 %s  ', column_letter)), 'sharpness =', num2str(double(sharpness)), 'mm^-^1'));
 end
+
+disp(sharpness_values);
